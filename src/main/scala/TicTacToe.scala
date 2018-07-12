@@ -27,21 +27,28 @@ object TicTacToe extends App {
 
   def getWinner(grid: Grid): Option[Player] = grid match {
       // rows
-    case g if g(0)(0) == g(0)(1) && g(0)(1) == g(0)(2) => g(0)(0)
-    case g if g(1)(0) == g(1)(1) && g(1)(1) == g(1)(2) => g(1)(0)
-    case g if g(2)(0) == g(2)(1) && g(2)(1) == g(2)(2) => g(2)(0)
+    case g if g(0)(0).isDefined && g(0)(0) == g(0)(1) && g(0)(1) == g(0)(2) => g(0)(0)
+    case g if g(1)(0).isDefined && g(1)(0) == g(1)(1) && g(1)(1) == g(1)(2) => g(1)(0)
+    case g if g(2)(0).isDefined && g(2)(0) == g(2)(1) && g(2)(1) == g(2)(2) => g(2)(0)
       // columns
-    case g if g(0)(0) == g(1)(0) && g(1)(0) == g(2)(0) => g(0)(0)
-    case g if g(0)(1) == g(1)(1) && g(1)(1) == g(2)(1) => g(0)(1)
-    case g if g(0)(2) == g(1)(2) && g(1)(2) == g(2)(2) => g(0)(2)
+    case g if g(0)(0).isDefined && g(0)(0) == g(1)(0) && g(1)(0) == g(2)(0) => g(0)(0)
+    case g if g(0)(1).isDefined && g(0)(1) == g(1)(1) && g(1)(1) == g(2)(1) => g(0)(1)
+    case g if g(0)(2).isDefined && g(0)(2) == g(1)(2) && g(1)(2) == g(2)(2) => g(0)(2)
       // diags
-    case g if g(0)(0) == g(1)(1) && g(1)(1) == g(2)(2) => g(0)(0)
-    case g if g(0)(2) == g(1)(1) && g(1)(1) == g(2)(0) => g(0)(2)
+    case g if g(0)(0).isDefined && g(0)(0) == g(1)(1) && g(1)(1) == g(2)(2) => g(0)(0)
+    case g if g(0)(2).isDefined && g(0)(2) == g(1)(1) && g(1)(1) == g(2)(0) => g(0)(2)
+    case _ => None
   }
 
-  def getPlayerAction(player: Player): Coord = {
+  def getPlayerAction(availableCells: Seq[Coord], player: Player): Coord = {
     val xy = StdIn.readLine(s"Action for player ${player.symbol}? ").split("").map(_.toInt)
-    Coord(xy(0), xy(1))
+    val picked = Coord(xy(0), xy(1))
+    if (availableCells.contains(picked)) {
+      picked
+    } else {
+      println(s"Cell $picked is not allowed: Not available.")
+      getPlayerAction(availableCells, player)
+    }
   }
 
   def nextPlayer: Player => Player = {
@@ -58,7 +65,8 @@ object TicTacToe extends App {
   def stepOneTurn(currentPlayer: Player, currentGrid: Grid): Option[Player] = {
     println("Current grid:")
     printGrid(currentGrid)
-    val action = getPlayerAction(currentPlayer)
+    val possibleCells = availableCells(currentGrid)
+    val action = getPlayerAction(possibleCells, currentPlayer)
     val nextGrid = putPlayer(currentGrid, currentPlayer, action)
     val maybeWinner = getWinner(nextGrid)
     val stillPlayable = availableCells(nextGrid).nonEmpty
