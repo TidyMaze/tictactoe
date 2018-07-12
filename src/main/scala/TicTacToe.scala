@@ -1,5 +1,7 @@
 import TicTacToe.Grid
 
+import scala.io.StdIn
+
 sealed abstract class Player(val symbol: String)
 case object PlayerX extends Player("X")
 case object PlayerY extends Player("Y")
@@ -8,6 +10,7 @@ case object PlayerY extends Player("Y")
 object TicTacToe extends App {
   type Grid = Seq[Seq[Option[Player]]]
   case class Coord(x: Int, y: Int)
+  val Dim = 3
 
   def showCell: Option[Player] => String = {
     case Some(p) => p.symbol
@@ -36,13 +39,39 @@ object TicTacToe extends App {
     case g if g(0)(2) == g(1)(1) && g(1)(1) == g(2)(0) => g(0)(2)
   }
 
-  val Dim = 3
-  val grid = mkGrid(Dim)
-  printGrid(grid)
-  println()
-  printGrid(putPlayer(grid, PlayerX, Coord(0,0)))
+  def getPlayerAction(player: Player): Coord = {
+    val xy = StdIn.readLine(s"Action for player ${player.symbol}? ").split("").map(_.toInt)
+    Coord(xy(0), xy(1))
+  }
 
-  val winningGrid = Seq(Coord(0,0), Coord(0,1), Coord(0,2)).foldLeft(grid)((grid, coord) => putPlayer(grid, PlayerX, coord))
-  printGrid(winningGrid)
+  def nextPlayer: Player => Player = {
+    case PlayerX => PlayerY
+    case PlayerY => PlayerX
+  }
 
+  def availableCells(grid: Grid): Seq[Coord] = for {
+    x <- grid.head.indices
+    y <- grid.indices
+    if grid(y)(x).isEmpty
+  } yield Coord(x,y)
+
+  def stepOneTurn(currentPlayer: Player, currentGrid: Grid): Option[Player] = {
+    println("Current grid:")
+    printGrid(currentGrid)
+    val action = getPlayerAction(currentPlayer)
+    val nextGrid = putPlayer(currentGrid, currentPlayer, action)
+    val maybeWinner = getWinner(nextGrid)
+    val stillPlayable = availableCells(nextGrid).nonEmpty
+    (maybeWinner, stillPlayable) match {
+      case (Some(winner), _) => Some(winner)
+      case (None, false) => None
+      case (None, true) => stepOneTurn(nextPlayer(currentPlayer), nextGrid)
+    }
+  }
+
+  def fullGame(): Option[Player] = stepOneTurn(PlayerX, mkGrid(Dim))
+
+  val maybeWinner = fullGame()
+  val endingInfo = maybeWinner.map(p => s"${p.symbol} WINS!").getOrElse("IT'S A DRAW!")
+  println(endingInfo)
 }
