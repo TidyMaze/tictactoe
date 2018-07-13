@@ -99,8 +99,13 @@ object TicTacToe extends App {
   def getHumanAction: Brain = { (availableCells, grid, player) =>
     println("Current grid:")
     printGrid(grid)
-    val xy = StdIn.readLine(s"Action for player ${player.symbol}? ").split("").map(_.toInt)
-    val picked = Coord(xy(0), xy(1))
+    val raw = StdIn.readLine(s"Action for player ${player.symbol}? ")
+    val picked = """^(\d)(\d)$""".r.findFirstMatchIn(raw)
+      .map(m => Coord(m.group(1).toInt, m.group(2).toInt))
+      .getOrElse {
+        println(s"Invalid input, valid format is XY with X = column and Y = row. Starting at top left (0,0)")
+        getHumanAction(availableCells, grid, player)
+      }
     if (availableCells.contains(picked)) {
       picked
     } else {
