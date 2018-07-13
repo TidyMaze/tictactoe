@@ -79,15 +79,18 @@ object TicTacToe extends App {
   } yield Coord(x,y)
 
   def playTillEnd(currentPlayer: Player, currentGrid: Grid, getPlayerAction: Brain, getPlayerOppAction: Brain): (Option[Player], Grid) = {
-    val possibleCells = availableCells(currentGrid)
-    val action = getPlayerAction(possibleCells, currentGrid, currentPlayer)
-    val nextGrid = putPlayer(currentGrid, currentPlayer, action)
-    val maybeWinner = getWinner(nextGrid)
-    val stillPlayable = availableCells(nextGrid).nonEmpty
-    (maybeWinner, stillPlayable) match {
+    val nextGrid = putPlayer(
+      currentGrid,
+      currentPlayer,
+      getPlayerAction(
+        availableCells(currentGrid),
+        currentGrid,
+        currentPlayer)
+    )
+    (getWinner(nextGrid), availableCells(nextGrid)) match {
       case (Some(winner), _) => (Some(winner), nextGrid)
-      case (None, false) => (None, nextGrid)
-      case (None, true) => playTillEnd(nextPlayer(currentPlayer), nextGrid, getPlayerOppAction, getPlayerAction)
+      case (None, Nil) => (None, nextGrid)
+      case (None, _) => playTillEnd(nextPlayer(currentPlayer), nextGrid, getPlayerOppAction, getPlayerAction)
     }
   }
 
