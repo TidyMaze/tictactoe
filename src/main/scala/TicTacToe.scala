@@ -106,7 +106,7 @@ object TicTacToe extends App {
         fullGame(opp, getRandomAction, getRandomAction, nextGrid)._1
       }
       rootAction -> endings
-    }).toMap.toSeq.map(score).sortBy(-_._2)
+    }).map(score).sortBy(-_._2)
     println("MonteCarlo eval: ")
     println(sorted.toSeq.map(c => c._1 + " -> " + c._2).mkString("\n"))
     sorted.head._1
