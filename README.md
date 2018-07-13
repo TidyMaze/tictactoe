@@ -1,5 +1,9 @@
 # A basic TicTacTor game powered by MonteCarlo AI in scala
 
+## Run
+
+```sbt run``` or run ```TicTacToe``` in IDE
+
 ```
 MonteCarlo eval: 
 Coord(1,1) -> 0.485

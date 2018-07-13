@@ -91,6 +91,7 @@ object TicTacToe extends App {
     }).map(score).sortBy(-_._2)
     println("MonteCarlo eval: ")
     println(sorted.toSeq.map(c => c._1 + " -> " + c._2).mkString("\n"))
+    println()
     sorted.head._1
   }
 
@@ -100,6 +101,7 @@ object TicTacToe extends App {
     println("Current grid:")
     printGrid(grid)
     val raw = StdIn.readLine(s"Action for player ${player.symbol}? ")
+    println()
     val picked = """^(\d)(\d)$""".r.findFirstMatchIn(raw)
       .map(m => Coord(m.group(1).toInt, m.group(2).toInt))
       .getOrElse {
