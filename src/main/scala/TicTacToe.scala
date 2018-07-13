@@ -107,9 +107,8 @@ object TicTacToe extends App {
       }
       rootAction -> endings
     }).toMap.toSeq.map(score).sortBy(-_._2)
-
-//    println(sorted)
-
+    println("MonteCarlo eval: ")
+    println(sorted.toSeq.map(c => c._1 + " -> " + c._2).mkString("\n"))
     sorted.head._1
   }
 
