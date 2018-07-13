@@ -78,32 +78,28 @@ object TicTacToe extends App {
     if grid(y)(x).isEmpty
   } yield Coord(x,y)
 
-  def playTillEnd(currentPlayer: Player, currentGrid: Grid, getPlayerAction: Brain, getPlayerOppAction: Brain): (Option[Player], Grid) = {
-    val nextGrid = putPlayer(
-      currentGrid,
-      currentPlayer,
-      getPlayerAction(
-        availableCells(currentGrid),
-        currentGrid,
-        currentPlayer)
-    )
-    (getWinner(nextGrid), availableCells(nextGrid)) match {
-      case (Some(winner), _) => (Some(winner), nextGrid)
-      case (None, Nil) => (None, nextGrid)
-      case (None, _) => playTillEnd(nextPlayer(currentPlayer), nextGrid, getPlayerOppAction, getPlayerAction)
+  def playTillEnd(currentPlayer: Player, currentGrid: Grid, currentBrain: Brain, oppBrain: Brain): (Option[Player], Grid) = {
+    val maybePlayer = getWinner(currentGrid)
+    val cells = availableCells(currentGrid)
+
+    (maybePlayer, cells) match {
+      case (Some(winner), _) => (Some(winner), currentGrid)
+      case (None, Nil) => (None, currentGrid)
+      case (None, _) =>
+        playTillEnd(nextPlayer(currentPlayer), putPlayer(currentGrid, currentPlayer, currentBrain(cells, currentGrid, currentPlayer)), oppBrain, currentBrain)
     }
   }
 
-  def fullGame(player: Player, getPlayerAction: Brain, getPlayerOppAction: Brain, grid: Grid): (Option[Player], Grid) = playTillEnd(player, grid, getPlayerAction, getPlayerOppAction)
+  def fullGame(player: Player, currentBrain: Brain, oppBrain: Brain, grid: Grid): (Option[Player], Grid) =
+    playTillEnd(player, grid, currentBrain, oppBrain)
 
   def monteCarlo(currentPlayer: Player, grid: Grid, nbGames: Int): Coord = {
-    val score: ((Coord, Seq[Option[Player]])) => Double = { entry =>
+    val score: ((Coord, Seq[Option[Player]])) => (Coord, Double) = { entry =>
         val wins = entry._2.count(maybeWinner => maybeWinner.isDefined && maybeWinner.contains(currentPlayer))
         val loses = entry._2.count(maybeWinner => maybeWinner.isDefined && !maybeWinner.contains(currentPlayer))
-        val draws = entry._2.count(maybeWinner => maybeWinner.isEmpty)
-        (wins.toDouble * 1 + loses.toDouble * -1) / entry._2.size
+        entry._1 -> (wins.toDouble * 1 + loses.toDouble * -1) / entry._2.size
     }
-    availableCells(grid).map(rootAction => {
+    val sorted = availableCells(grid).map(rootAction => {
       val endings = 0 until nbGames map { _ =>
         fullGame(
           nextPlayer(currentPlayer),
@@ -118,12 +114,16 @@ object TicTacToe extends App {
       }
       rootAction -> endings
     }
-    ).toMap.toSeq.maxBy(score)._1
+    ).toMap.toSeq.map(score).sortBy(-_._2)
+
+//    println(sorted)
+
+    sorted.head._1
   }
 
-  def monteCarloBrain: Brain = (availableCells, grid, player) => monteCarlo(player, grid, 1000)
+  def monteCarloBrain: Brain = (_, grid, player) => monteCarlo(player, grid, 1000)
 
-  val (maybeWinner, endingGrid) = fullGame(PlayerX, getHumanAction, monteCarloBrain, mkGrid(Dim))
+  val (maybeWinner, endingGrid) = fullGame(PlayerX, monteCarloBrain, getHumanAction, mkGrid(Dim))
   val endingInfo = maybeWinner.map(p => s"${p.symbol} WINS!").getOrElse("IT'S A DRAW!")
   println(endingInfo)
   printGrid(endingGrid)
