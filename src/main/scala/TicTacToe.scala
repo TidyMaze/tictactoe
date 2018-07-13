@@ -101,20 +101,12 @@ object TicTacToe extends App {
     }
     val sorted = availableCells(grid).map(rootAction => {
       val endings = 0 until nbGames map { _ =>
-        fullGame(
-          nextPlayer(currentPlayer),
-          getRandomAction,
-          getRandomAction,
-          putPlayer(
-            grid,
-            currentPlayer,
-            rootAction
-          )
-        )._1
+        val nextGrid = putPlayer(grid, currentPlayer, rootAction)
+        val opp = nextPlayer(currentPlayer)
+        fullGame(opp, getRandomAction, getRandomAction, nextGrid)._1
       }
       rootAction -> endings
-    }
-    ).toMap.toSeq.map(score).sortBy(-_._2)
+    }).toMap.toSeq.map(score).sortBy(-_._2)
 
 //    println(sorted)
 
