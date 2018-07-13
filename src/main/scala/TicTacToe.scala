@@ -46,26 +46,11 @@ object TicTacToe extends App {
     case _ => None
   }
 
-  def getHumanAction: Brain = { (availableCells, grid, player) =>
-    println("Current grid:")
-    printGrid(grid)
-    val xy = StdIn.readLine(s"Action for player ${player.symbol}? ").split("").map(_.toInt)
-    val picked = Coord(xy(0), xy(1))
-    if (availableCells.contains(picked)) {
-      picked
-    } else {
-      println(s"Cell $picked is not allowed: Not available.")
-      getHumanAction(availableCells, grid, player)
-    }
-  }
-
   def randomIn[A](xs: Seq[A]): A =
     if(xs.isEmpty)
       throw new InvalidParameterException("Empty seq")
      else
       xs(random.nextInt(xs.size))
-
-  def getRandomAction: Brain = (availableCells, grid, player) => randomIn(availableCells)
 
   def nextPlayer: Player => Player = {
     case PlayerX => PlayerY
@@ -90,9 +75,6 @@ object TicTacToe extends App {
     }
   }
 
-  def fullGame(player: Player, currentBrain: Brain, oppBrain: Brain, grid: Grid): (Option[Player], Grid) =
-    playTillEnd(player, grid, currentBrain, oppBrain)
-
   def monteCarlo(currentPlayer: Player, grid: Grid, nbGames: Int): Coord = {
     val score: ((Coord, Seq[Option[Player]])) => (Coord, Double) = { entry =>
         val wins = entry._2.count(maybeWinner => maybeWinner.isDefined && maybeWinner.contains(currentPlayer))
@@ -103,7 +85,7 @@ object TicTacToe extends App {
       val endings = 0 until nbGames map { _ =>
         val nextGrid = putPlayer(grid, currentPlayer, rootAction)
         val opp = nextPlayer(currentPlayer)
-        fullGame(opp, getRandomAction, getRandomAction, nextGrid)._1
+        playTillEnd(opp, nextGrid, getRandomAction, getRandomAction)._1
       }
       rootAction -> endings
     }).map(score).sortBy(-_._2)
@@ -114,7 +96,22 @@ object TicTacToe extends App {
 
   def monteCarloBrain: Brain = (_, grid, player) => monteCarlo(player, grid, 1000)
 
-  val (maybeWinner, endingGrid) = fullGame(PlayerX, monteCarloBrain, getHumanAction, mkGrid(Dim))
+  def getHumanAction: Brain = { (availableCells, grid, player) =>
+    println("Current grid:")
+    printGrid(grid)
+    val xy = StdIn.readLine(s"Action for player ${player.symbol}? ").split("").map(_.toInt)
+    val picked = Coord(xy(0), xy(1))
+    if (availableCells.contains(picked)) {
+      picked
+    } else {
+      println(s"Cell $picked is not allowed: Not available.")
+      getHumanAction(availableCells, grid, player)
+    }
+  }
+
+  def getRandomAction: Brain = (availableCells, grid, player) => randomIn(availableCells)
+
+  val (maybeWinner, endingGrid) = playTillEnd(PlayerX, mkGrid(Dim), monteCarloBrain, getHumanAction)
   val endingInfo = maybeWinner.map(p => s"${p.symbol} WINS!").getOrElse("IT'S A DRAW!")
   println(endingInfo)
   printGrid(endingGrid)
