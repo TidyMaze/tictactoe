@@ -1,4 +1,4 @@
-# A basic TicTacTor game powered by MonteCarlo AI in scala
+# A basic TicTacToe game powered by MonteCarlo AI in scala
 
 ## Run
 
